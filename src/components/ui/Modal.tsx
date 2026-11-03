@@ -14,27 +14,29 @@ const widths = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg' };
 
 export default function Modal({ isOpen, onClose, title, children, maxWidth = 'md' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
+
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
 
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const panel = panelRef.current;
-    const focusable = panel?.querySelectorAll<HTMLElement>(
+    const getFocusableItems = () => Array.from(panel?.querySelectorAll<HTMLElement>(
       'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    focusable?.[0]?.focus();
+    ) ?? []);
+    getFocusableItems()[0]?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab' || !panel) return;
 
-      const items = Array.from(panel.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-      ));
+      const items = getFocusableItems();
       if (items.length === 0) {
         event.preventDefault();
         panel.focus();
@@ -42,7 +44,10 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'md
       }
       const first = items[0];
       const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!panel.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -52,8 +57,11 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'md
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

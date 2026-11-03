@@ -22,6 +22,7 @@ export default function Sidebar() {
   }, [clearFeedback, feedback]);
 
   const handleImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    clearFeedback();
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
@@ -35,6 +36,7 @@ export default function Sidebar() {
   };
 
   const handleCreateSection = async (name: string) => {
+    clearFeedback();
     try {
       const section = await createSection(name);
       setActiveSectionId(section.id);
@@ -45,6 +47,7 @@ export default function Sidebar() {
   };
 
   const handleRenameSection = async (id: string, name: string) => {
+    clearFeedback();
     try {
       await renameSection(id, name);
     } catch {
@@ -54,6 +57,7 @@ export default function Sidebar() {
 
   const handleDeleteSection = async () => {
     if (!sectionToDelete) return;
+    clearFeedback();
     try {
       await deleteSection(sectionToDelete.id);
       setSectionToDelete(null);
@@ -75,14 +79,14 @@ export default function Sidebar() {
         <SectionList
           sections={sections}
           activeSectionId={activeSectionId}
-          onSelect={setActiveSectionId}
+          onSelect={(id) => { clearFeedback(); setActiveSectionId(id); }}
           onRename={handleRenameSection}
-          onDelete={(id) => setSectionToDelete(sections.find((section) => section.id === id) ?? null)}
+          onDelete={(id) => { clearFeedback(); setSectionToDelete(sections.find((section) => section.id === id) ?? null); }}
         />
       </div>
 
       <div className="border-t border-border-base px-3 py-2">
-        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setShowNewSectionForm(true)}>
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { clearFeedback(); setShowNewSectionForm(true); }}>
           <Plus aria-hidden="true" size={16} /> New Section
         </Button>
         {showNewSectionForm && (
@@ -91,16 +95,16 @@ export default function Sidebar() {
       </div>
 
       <div className="flex gap-1 border-t border-border-base px-3 py-3">
-        <Button variant="ghost" size="sm" className="flex-1" onClick={() => { void exportData().catch(() => undefined); }}>
+        <Button variant="ghost" size="sm" className="flex-1" onClick={() => { clearFeedback(); void exportData().catch(() => undefined); }}>
           <Download aria-hidden="true" size={14} /> Export
         </Button>
-        <Button variant="ghost" size="sm" className="flex-1" disabled={isImporting} onClick={() => fileInputRef.current?.click()}>
+        <Button variant="ghost" size="sm" className="flex-1" disabled={isImporting} onClick={() => { clearFeedback(); fileInputRef.current?.click(); }}>
           <Upload aria-hidden="true" size={14} /> {isImporting ? 'Importing…' : 'Import'}
         </Button>
         <input ref={fileInputRef} type="file" accept=".json" onChange={handleImportChange} className="hidden" aria-label="Import backup file" />
       </div>
       {feedback && (
-        <p className={`px-4 pb-3 text-xs ${feedback.kind === 'error' ? 'text-accent' : 'text-text-secondary'}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
+        <p className={`mx-3 mb-3 rounded border border-border-base bg-bg-tertiary px-3 py-2 text-xs ${feedback.kind === 'error' ? 'text-accent' : 'text-text-secondary'}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
           {feedback.message}
         </p>
       )}

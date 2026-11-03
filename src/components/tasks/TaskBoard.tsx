@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Terminal } from 'lucide-react';
 import type { Task } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
 import Button from '../ui/Button';
@@ -20,7 +20,7 @@ export default function TaskBoard({ sectionId }: TaskBoardProps) {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   if (sectionId === null) {
-    return <EmptyState title="No section selected" description="Choose a section from the sidebar to get started." />;
+    return <EmptyState icon={<Terminal aria-hidden="true" size={32} />} title="No section selected" description="Choose a section from the sidebar to get started." />;
   }
 
   const handleCreate = (data: TaskFormData) => {

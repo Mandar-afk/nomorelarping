@@ -70,4 +70,39 @@ Sections are managed through `AppContext`, and task behavior is handled by
 - [x] Phase 3 — Core Functionality
 - [x] Phase 4 — Persistence
 - [x] Phase 5 — PWA and Deployment
-- [ ] Phase 6 — Testing and Final Polish
+- [x] Phase 6 — Testing and Final Polish
+
+## Phase 6 Verification
+
+The interactive checks were run in isolated Chrome profiles against the app
+and its production preview.
+
+| Test | Result | Verification |
+|---|---|---|
+| A1 Create section | Pass | Saved in IndexedDB, selected in the sidebar, and shown in the TopBar. |
+| A2 Blank section validation | Pass | Empty and whitespace names show an error and are not saved. |
+| A3 Inline rename | Pass | Enter updates the sidebar, TopBar, and IndexedDB. |
+| A4 Cancel rename | Pass | Escape keeps the original name. |
+| A5 Cascading section delete | Pass | Confirmation appears; confirming removes the section and its task. |
+| A6 Refresh persistence | Pass | Active section and tasks reload; task order remains saved. |
+| B1 Minimal task | Pass | Default priority is medium, order starts at zero, and due date is absent. |
+| B2 Full task | Pass | High badge and Tomorrow date render with the supplied fields. |
+| B3 Overdue notice | Pass | Past due date shows red text and the Overdue label. |
+| B4 Edit task | Pass | Name, description, and priority update in IndexedDB and the UI. |
+| B5 Complete task | Pass | Task moves into the dimmed completed list with strikethrough. |
+| B6 Restore task | Pass | Task returns to the active list at the bottom. |
+| B7 Drag reorder | Pass | Pointer drag reorders tasks; the order remains after reload. |
+| B8 Prevent accidental drag | Pass | Task controls respond to clicks; a sub-five-pixel pointer movement does not start a drag. |
+| C1 Export JSON | Pass | Downloaded backup parses and contains version 1, sections, and tasks. |
+| C2 Import backup | Pass | Import restores data after a task is deleted. |
+| C3 Reject invalid backup | Pass | Invalid payload is rejected and existing records remain intact. |
+| D1 Production build | Pass | TypeScript and Vite build succeed; manifest and service worker are generated. |
+| D2 Service worker | Pass | Chrome registers and activates the worker for the app origin. |
+| D3 Installability | Pass | Chrome reports no installability errors; manifest uses standalone display and valid icons. |
+| D4 Offline mode | Pass | The cached app opens offline; tasks can be created and edited in IndexedDB. |
+
+The accessibility review confirmed keyboard navigation through dialogs, focus
+wrapping at both ends, Escape to close, and focus returning to the invoking
+control. Interactive controls have visible or programmatic names, and form
+fields have labels. `npx tsc --noEmit` passes; `src/` contains no `any`,
+`console.log`, or `TODO` matches.
