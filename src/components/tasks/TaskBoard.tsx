@@ -14,7 +14,7 @@ export interface TaskBoardProps {
 }
 
 export default function TaskBoard({ sectionId }: TaskBoardProps) {
-  const { activeTasks, completedTasks, createTask, updateTask, deleteTask, completeTask, restoreTask, reorderTasks } = useTasks(sectionId);
+  const { activeTasks, completedTasks, isLoading, error, createTask, updateTask, deleteTask, completeTask, restoreTask, reorderTasks } = useTasks(sectionId);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
@@ -51,18 +51,25 @@ export default function TaskBoard({ sectionId }: TaskBoardProps) {
       {showTaskForm && <TaskForm onSubmit={handleCreate} onCancel={() => setShowTaskForm(false)} />}
       {editingTask && <TaskForm key={editingTask.id} initialValues={editingTask} onSubmit={handleUpdate} onCancel={() => setEditingTask(null)} />}
 
-      <ActiveTaskList
-        tasks={activeTasks}
-        onComplete={completeTask}
-        onEdit={(task) => { setShowTaskForm(false); setEditingTask(task); }}
-        onDelete={(id) => setTaskToDelete(activeTasks.find((task) => task.id === id) ?? null)}
-        onReorder={reorderTasks}
-      />
-      <CompletedTaskList
-        tasks={completedTasks}
-        onRestore={restoreTask}
-        onDelete={(id) => setTaskToDelete(completedTasks.find((task) => task.id === id) ?? null)}
-      />
+      {error && <p className="mb-4 text-sm text-accent" role="alert">{error}</p>}
+      {isLoading && activeTasks.length === 0 && completedTasks.length === 0 ? (
+        <p className="py-8 text-center text-sm text-text-secondary" role="status">Loading tasks…</p>
+      ) : (
+        <>
+          <ActiveTaskList
+            tasks={activeTasks}
+            onComplete={completeTask}
+            onEdit={(task) => { setShowTaskForm(false); setEditingTask(task); }}
+            onDelete={(id) => setTaskToDelete(activeTasks.find((task) => task.id === id) ?? null)}
+            onReorder={reorderTasks}
+          />
+          <CompletedTaskList
+            tasks={completedTasks}
+            onRestore={restoreTask}
+            onDelete={(id) => setTaskToDelete(completedTasks.find((task) => task.id === id) ?? null)}
+          />
+        </>
+      )}
 
       <ConfirmDialog
         isOpen={taskToDelete !== null}

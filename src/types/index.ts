@@ -29,9 +29,11 @@ export interface ISectionRepository {
   update(id: string, data: Partial<Omit<Section, 'id' | 'createdAt'>>): Promise<Section>;
   delete(id: string): Promise<void>;
   reorder(ids: string[]): Promise<void>;
+  replaceAll(sections: Section[], tasks: Task[]): Promise<void>;
 }
 
 export interface ITaskRepository {
+  getAll(): Promise<Task[]>;
   getAllBySection(sectionId: string): Promise<Task[]>;
   getById(id: string): Promise<Task | undefined>;
   create(data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task>;
@@ -48,10 +50,13 @@ export interface AppContextValue {
   activeSectionId: string | null;
   setActiveSectionId: (id: string | null) => void;
   isLoadingSections: boolean;
-  createSection: (name: string) => Section;
-  renameSection: (id: string, name: string) => void;
-  deleteSection: (id: string) => void;
-  reorderSections: (ids: string[]) => void;
+  createSection: (name: string) => Promise<Section>;
+  renameSection: (id: string, name: string) => Promise<void>;
+  deleteSection: (id: string) => Promise<void>;
+  reorderSections: (ids: string[]) => Promise<void>;
+  refreshData: () => Promise<void>;
+  dataRevision: number;
+  sectionsError: string | null;
 }
 
 export interface ExportPayload {

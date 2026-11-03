@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { sectionRepository } from '../repositories/SectionRepository';
 import type { AppContextValue, Section } from '../types';
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -6,41 +7,79 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [sections, setSections] = useState<Section[]>([]);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
-  const [isLoadingSections] = useState(false);
+  const [isLoadingSections, setIsLoadingSections] = useState(true);
+  const [dataRevision, setDataRevision] = useState(0);
+  const [sectionsError, setSectionsError] = useState<string | null>(null);
 
-  const createSection = useCallback((name: string): Section => {
-    const now = Date.now();
-    const section: Section = {
-      id: crypto.randomUUID(),
-      name,
-      order: sections.length,
-      createdAt: now,
-      updatedAt: now,
-    };
-    setSections((current) => [...current, section]);
-    return section;
-  }, [sections.length]);
-
-  const renameSection = useCallback((id: string, name: string) => {
-    setSections((current) => current.map((section) =>
-      section.id === id ? { ...section, name, updatedAt: Date.now() } : section,
-    ));
-  }, []);
-
-  const deleteSection = useCallback((id: string) => {
-    setSections((current) => current.filter((section) => section.id !== id));
-    setActiveSectionId((current) => current === id ? null : current);
-  }, []);
-
-  const reorderSections = useCallback((ids: string[]) => {
-    setSections((current) => {
-      const byId = new Map(current.map((section) => [section.id, section]));
-      return ids.flatMap((id, order) => {
-        const section = byId.get(id);
-        return section ? [{ ...section, order }] : [];
+  const loadSections = useCallback(async (selectFirstWhenNone: boolean) => {
+    setIsLoadingSections(true);
+    try {
+      const loadedSections = await sectionRepository.getAll();
+      setSections(loadedSections);
+      setActiveSectionId((current) => {
+        if (current && loadedSections.some((section) => section.id === current)) return current;
+        return selectFirstWhenNone ? loadedSections[0]?.id ?? null : null;
       });
-    });
+      setSectionsError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load sections.';
+      setSectionsError(message);
+      throw error;
+    } finally {
+      setIsLoadingSections(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadSections(true).catch(() => undefined);
+  }, [loadSections]);
+
+  const createSection = useCallback(async (name: string): Promise<Section> => {
+    try {
+      const section = await sectionRepository.create({ name, order: sections.length });
+      await loadSections(false);
+      setActiveSectionId(section.id);
+      return section;
+    } catch (error) {
+      setSectionsError(error instanceof Error ? error.message : 'Unable to create section.');
+      throw error;
+    }
+  }, [loadSections, sections.length]);
+
+  const renameSection = useCallback(async (id: string, name: string): Promise<void> => {
+    try {
+      await sectionRepository.update(id, { name });
+      await loadSections(false);
+    } catch (error) {
+      setSectionsError(error instanceof Error ? error.message : 'Unable to rename section.');
+      throw error;
+    }
+  }, [loadSections]);
+
+  const deleteSection = useCallback(async (id: string): Promise<void> => {
+    try {
+      await sectionRepository.delete(id);
+      await loadSections(false);
+    } catch (error) {
+      setSectionsError(error instanceof Error ? error.message : 'Unable to delete section.');
+      throw error;
+    }
+  }, [loadSections]);
+
+  const reorderSections = useCallback(async (ids: string[]): Promise<void> => {
+    try {
+      await sectionRepository.reorder(ids);
+      await loadSections(false);
+    } catch (error) {
+      setSectionsError(error instanceof Error ? error.message : 'Unable to reorder sections.');
+      throw error;
+    }
+  }, [loadSections]);
+
+  const refreshData = useCallback(async () => {
+    await loadSections(true);
+    setDataRevision((revision) => revision + 1);
+  }, [loadSections]);
 
   return (
     <AppContext.Provider value={{
@@ -52,6 +91,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       renameSection,
       deleteSection,
       reorderSections,
+      refreshData,
+      dataRevision,
+      sectionsError,
     }}>
       {children}
     </AppContext.Provider>
