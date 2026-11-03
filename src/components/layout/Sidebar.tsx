@@ -5,38 +5,22 @@ import SectionList from '../sections/SectionList';
 import SectionForm from '../sections/SectionForm';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import Button from '../ui/Button';
+import { useAppContext } from '../../context/AppContext';
 
-interface SidebarProps {
-  onSectionSelect: (id: string, name: string) => void;
-}
-
-export default function Sidebar({ onSectionSelect }: SidebarProps) {
-  // Temporary in-memory section state for Phase 2 — will be replaced in Phase 3
-  const [sections, setSections] = useState<SectionItemData[]>([]);
-  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+export default function Sidebar() {
+  const { sections, activeSectionId, setActiveSectionId, createSection, renameSection, deleteSection } = useAppContext();
   const [showNewSectionForm, setShowNewSectionForm] = useState(false);
   const [sectionToDelete, setSectionToDelete] = useState<SectionItemData | null>(null);
 
-  const createSection = (name: string) => {
-    const section = { id: crypto.randomUUID(), name };
-    setSections((current) => [...current, section]);
+  const handleCreateSection = (name: string) => {
+    const section = createSection(name);
     setActiveSectionId(section.id);
-    onSectionSelect(section.id, section.name);
     setShowNewSectionForm(false);
   };
 
-  const renameSection = (id: string, name: string) => {
-    setSections((current) => current.map((section) => section.id === id ? { ...section, name } : section));
-    if (activeSectionId === id) onSectionSelect(id, name);
-  };
-
-  const deleteSection = () => {
+  const handleDeleteSection = () => {
     if (!sectionToDelete) return;
-    setSections((current) => current.filter((section) => section.id !== sectionToDelete.id));
-    if (activeSectionId === sectionToDelete.id) {
-      setActiveSectionId(null);
-      onSectionSelect('', '');
-    }
+    deleteSection(sectionToDelete.id);
     setSectionToDelete(null);
   };
 
@@ -51,12 +35,7 @@ export default function Sidebar({ onSectionSelect }: SidebarProps) {
         <SectionList
           sections={sections}
           activeSectionId={activeSectionId}
-          onSelect={(id) => {
-            const section = sections.find((item) => item.id === id);
-            if (!section) return;
-            setActiveSectionId(id);
-            onSectionSelect(id, section.name);
-          }}
+          onSelect={setActiveSectionId}
           onRename={renameSection}
           onDelete={(id) => setSectionToDelete(sections.find((section) => section.id === id) ?? null)}
         />
@@ -67,7 +46,7 @@ export default function Sidebar({ onSectionSelect }: SidebarProps) {
           <Plus aria-hidden="true" size={16} /> New Section
         </Button>
         {showNewSectionForm && (
-          <SectionForm onSubmit={createSection} onCancel={() => setShowNewSectionForm(false)} />
+          <SectionForm onSubmit={handleCreateSection} onCancel={() => setShowNewSectionForm(false)} />
         )}
       </div>
 
@@ -86,7 +65,7 @@ export default function Sidebar({ onSectionSelect }: SidebarProps) {
         message={sectionToDelete ? `“${sectionToDelete.name}” will be removed.` : ''}
         confirmLabel="Delete section"
         isDangerous
-        onConfirm={deleteSection}
+        onConfirm={handleDeleteSection}
         onCancel={() => setSectionToDelete(null)}
       />
     </>

@@ -42,7 +42,7 @@ export default function TaskForm({ initialValues, onSubmit, onCancel }: TaskForm
   };
 
   return (
-    <form onSubmit={submit} className="mb-6 space-y-4 rounded-lg border border-border-base bg-bg-secondary p-4">
+    <form noValidate onSubmit={submit} className="mb-6 space-y-4 rounded-lg border border-border-base bg-bg-secondary p-4">
       <Input
         ref={nameRef}
         label="Task name"

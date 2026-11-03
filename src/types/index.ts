@@ -48,6 +48,10 @@ export interface AppContextValue {
   activeSectionId: string | null;
   setActiveSectionId: (id: string | null) => void;
   isLoadingSections: boolean;
+  createSection: (name: string) => Section;
+  renameSection: (id: string, name: string) => void;
+  deleteSection: (id: string) => void;
+  reorderSections: (ids: string[]) => void;
 }
 
 export interface ExportPayload {
